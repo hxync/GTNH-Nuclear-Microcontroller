@@ -8,13 +8,13 @@
 
 ## 配置
 
-- 将nuclear.lua内的代码保存到OC电脑的文件中。
+- 将`nuclear.lua`内的代码保存到OC电脑的文件中。
 
-- 给OC电脑换上空的EEPROM，执行"flash <文件名>"，按照指引将代码刷写到EEPROM中。
+- 给OC电脑换上空的EEPROM，执行`flash <文件名>`，按照指引将代码刷写到EEPROM中。
 
 - 在电子装配器中使用\{T1微控制器外壳、T1CPU，T1内存、T1红石卡、转运器、刷写过的EEPROM\}构建微控制器。
 
-备注：EEPROM的存储空间为4KB，源码文件(nuclear_SourceCode.lua)过大，务必使用通过重命名变量等方法压缩过的代码(nuclear.lua)。
+备注：EEPROM的存储空间为4KB，源码文件(`nuclear_SourceCode.lua`)过大，务必使用通过重命名变量等方法压缩过的代码(`nuclear.lua`)。
 
 ## 使用
 
@@ -48,13 +48,13 @@ This solution hardcodes the fuel rods, coolant cells, and nuclear reactor layout
 **Supported coolant cells**: 3 types of Helium, 3 types of NaK, 4 types of Space, and the Neutronium Heat Capacitor
 
 ## Configuration
-- Save the code from nuclear.lua into a file on the OC computer.
+- Save the code from `nuclear.lua` into a file on the OC computer.
 
-- Insert a blank EEPROM into the OC computer and execute flash <filename>. Follow the instructions to flash the code onto the EEPROM.
+- Insert a blank EEPROM into the OC computer and execute `flash <filename>`. Follow the instructions to flash the code onto the EEPROM.
 
-- In the Assembler, construct a microcontroller using the following components: {T1 Microcontroller Case, T1 CPU, T1 RAM, T1 Redstone Card, Transposer, the flashed EEPROM}.
+- In the Assembler, construct a microcontroller using the following components: \{T1 Microcontroller Case, T1 CPU, T1 RAM, T1 Redstone Card, Transposer, the flashed EEPROM\}.
 
-Note: The EEPROM has a storage capacity of 4 KB. The source file (nuclear_SourceCode.lua) is too large; be sure to use the compressed code (e.g., nuclear.lua) obtained by renaming variables and similar methods.
+Note: The EEPROM has a storage capacity of 4 KB. The source file (`nuclear_SourceCode.lua`) is too large; be sure to use the compressed code (`nuclear.lua`) obtained by renaming variables and similar methods.
 
 ## Usage
 - The microcontroller requires power (it can be powered through an ME Interface).
