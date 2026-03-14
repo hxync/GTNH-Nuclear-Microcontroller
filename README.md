@@ -12,7 +12,7 @@
 
 - 给OC电脑换上空的EEPROM，执行"flash <文件名>"，按照指引将代码刷写到EEPROM中。
 
-- 在电子装配器中使用T1微控制器外壳、T1CPU，T1内存、T1红石卡、转运器和刷写过的EEPROM构建微控制器。
+- 在电子装配器中使用\{T1微控制器外壳、T1CPU，T1内存、T1红石卡、转运器、刷写过的EEPROM\}构建微控制器。
 
 备注：EEPROM的存储空间为4KB，源码文件(nuclear_SourceCode.lua)过大，务必使用通过重命名变量等方法压缩过的代码(nuclear.lua)。
 
@@ -20,7 +20,7 @@
 
 - 微控制器需要供能（可以通过ME接口供能）
 
-- 若检测到非预期的情况，微控制器内的程序会原因，正面指示灯会闪烁红光，使用分析器shift右击微控制器即可查看程序中止原因
+- 若检测到非预期的情况，微控制器内的程序会中断，正面指示灯会闪烁红光，使用分析器shift右击微控制器即可查看程序中止原因
 
 - 程序运行期间不会自动启动核电，需要给予微控制器红石信号才会启动
 
@@ -40,3 +40,41 @@
 
 - 燃料棒与冷却单元的输入输出均通过ME接口进行
 
+# Strong Cooling Nuclear Reactor OC Automation
+This solution hardcodes the fuel rods, coolant cells, and nuclear reactor layout (six reactor chambers). Identification of fuel rods and coolant cells relies on item IDs from version 2.8.0 onwards.
+
+**Supported fuel rods**: Quad Uranium, Quad Enriched Uranium, Quad MOX, Quad Enriched Plutonium, Quad Naquadria, 32‑fold Naquadah, Quad Tiberium, Quad Excited Uranium, Quad Excited Plutonium
+
+**Supported coolant cells**: 3 types of Helium, 3 types of NaK, 4 types of Space, and the Neutronium Heat Capacitor
+
+## Configuration
+- Save the code from nuclear.lua into a file on the OC computer.
+
+- Insert a blank EEPROM into the OC computer and execute flash <filename>. Follow the instructions to flash the code onto the EEPROM.
+
+- In the Assembler, construct a microcontroller using the following components: {T1 Microcontroller Case, T1 CPU, T1 RAM, T1 Redstone Card, Transposer, the flashed EEPROM}.
+
+Note: The EEPROM has a storage capacity of 4 KB. The source file (nuclear_SourceCode.lua) is too large; be sure to use the compressed code (e.g., nuclear.lua) obtained by renaming variables and similar methods.
+
+## Usage
+- The microcontroller requires power (it can be powered through an ME Interface).
+
+- If an unexpected situation is detected, the program inside the microcontroller will terminate, and the front indicator light will flash red. Use an Analyzer and shift‑right‑click the microcontroller to view the reason for the termination.
+
+- During program operation, the nuclear reactor will not start automatically. It will only start when a redstone signal is given to the microcontroller.
+
+- The microcontroller must be placed directly adjacent to the reactor chamber. Two sets of usage methods are supported:
+
+**1. Normal Container Mode**
+
+- During startup, nearby containers are scanned. If no ME Interface is found, this mode is automatically entered. The scan is performed only once at startup.
+
+- Directions containing fuel rods or coolant cells with durability above 30 are marked as input directions (multiple such directions are allowed).
+
+- One container direction that contains neither fuel rods nor coolant cells with durability above 30 is marked as the output direction.
+
+**2. ME Mode**
+
+- During startup, nearby containers are scanned. If an ME Interface or an ME Dual‑Interface is found, this mode is automatically entered. The scan is performed only once at startup.
+
+Both input and output of fuel rods and coolant cells are handled through the ME Interface.
