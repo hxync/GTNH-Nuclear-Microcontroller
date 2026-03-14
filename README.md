@@ -77,4 +77,4 @@ Note: The EEPROM has a storage capacity of 4 KB. The source file (`nuclear_Sourc
 
 - During startup, nearby containers are scanned. If an ME Interface or an ME Dual‑Interface is found, this mode is automatically entered. The scan is performed only once at startup.
 
-Both input and output of fuel rods and coolant cells are handled through the ME Interface.
+- Both input and output of fuel rods and coolant cells are handled through the ME Interface.
