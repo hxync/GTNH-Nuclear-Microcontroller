@@ -2,7 +2,7 @@
 
 此方案硬编码了燃料棒、冷却单元、核电布局(六个反应仓)，识别燃料棒与冷却单元依赖于2.8.0以后的物品ID
 
-**支持的燃料棒**：4联铀、4联浓缩铀、4联MOX，4联浓缩钚、4联超能硅岩、32联硅岩、4联泰伯利亚、4联激发铀、4联激发钚
+**支持的燃料棒**：4联钍、4联铀、4联浓缩铀、4联MOX，4联浓缩钚、4联超能硅岩、“核心”、4联泰伯利亚、4联激发铀、4联激发钚
 
 **支持的冷却单元**：3种氦冷、3种钠钾、4种空间、中子热容
 
@@ -43,7 +43,7 @@
 # Strong Cooling Nuclear Reactor OC Automation
 This solution hardcodes the fuel rods, coolant cells, and nuclear reactor layout (six reactor chambers). Identification of fuel rods and coolant cells relies on item IDs from version 2.8.0 onwards.
 
-**Supported fuel rods**: Quad Uranium, Quad Enriched Uranium, Quad MOX, Quad Enriched Plutonium, Quad Naquadria, 32‑fold Naquadah, Quad Tiberium, Quad Excited Uranium, Quad Excited Plutonium
+**Supported fuel rods**: Quad Thorium, Quad Uranium, Quad Enriched Uranium, Quad MOX, Quad Enriched Plutonium, Quad Naquadria, 32‑fold Naquadah, Quad Tiberium, Quad Excited Uranium, Quad Excited Plutonium
 
 **Supported coolant cells**: 3 types of Helium, 3 types of NaK, 4 types of Space, and the Neutronium Heat Capacitor
 
