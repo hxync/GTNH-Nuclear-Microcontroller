@@ -166,10 +166,10 @@ function check(active)
         if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - isCoolant[i] * minCoolantCellDurability) or not isCoolant[i] and info[i-1].name ~= fuelRod then
             if isCoolant[i] and notShutdown then
                 setActive()
-                sleep(1)--核电运行周期为1秒，需等待本周期结束后再更换冷却单元
-                notShutdown = nil
+                sleep(1)
+                notShutdown=nil
             end
-            slotReplaced[#slotReplaced+1] = i--元件更换有延迟，确保先停机再处理
+            slotReplaced[#slotReplaced+1] = i--添加到待处理列表，确保先停机再处理
         end
     end
     for i=1,#slotReplaced do
@@ -185,17 +185,22 @@ function check(active)
             end
         end
     end
-    if notShutdown then--更换冷却单元后，等待下一轮检查确认无误再启动
-        setActive(active)
+    if slotReplaced[1] then
+        info = transposer_getAllStacks(sideReactorChamber).getAll()
+        for i=1,54 do
+            if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - isCoolant[i] * minCoolantCellDurability) or not isCoolant[i] and info[i-1].name ~= fuelRod then
+                error((isCoolant[slotReplaced[i]] and "冷却单元" or "燃料棒").."更换失败")
+            end
+        end
     end
-    return notShutdown--根据此次是否更换过冷却单元来决定下一轮检查延时
+    setActive(active)
 end
 
 --sleep函数
 function sleep(duration)
     local timeStart = computer_uptime()
     while computer_uptime() - timeStart < (duration or 0.7) do
-        local name = c2.pullSignal(0.1)
+        local name = computer.pullSignal(0.1)
         if name == "redstone_changed" then
             local maxInput, redstoneInput = 0, redstone_getInput()
             for i=0,5 do
@@ -215,7 +220,8 @@ end
 function main()
     initialize()
     while 1 do
-        sleep(check(isActive) and 0.7 or 0)
+        check(isActive)
+        sleep()
     end
 end
 
