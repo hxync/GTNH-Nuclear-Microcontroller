@@ -189,7 +189,7 @@ function check(active)
         info = transposer_getAllStacks(sideReactorChamber).getAll()
         for i=1,54 do
             if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - isCoolant[i] * minCoolantCellDurability) or not isCoolant[i] and info[i-1].name ~= fuelRod then
-                error((isCoolant[slotReplaced[i]] and "冷却单元" or "燃料棒").."更换失败")
+                error((isCoolant[i] and "冷却单元" or "燃料棒").."更换失败")
             end
         end
     end
