@@ -4,7 +4,7 @@ local component_list, component_proxy, computer_uptime = c1.list, c1.proxy, c2.u
 local transposer, redstone = component_proxy(component_list("transposer")()), component_proxy(component_list("redstone")())
 
 --每个函数均创建局部变量以压缩调用代码
-local transposer_getAllStacks, transposer_transferItem, transposer_getStackInSlot, redstone_getInput, redstone_getOutput, redstone_setOutput = transposer.getAllStacks, transposer.transferItem, transposer.getStackInSlot, redstone.getInput, redstone.getOutput, redstone.setOutput
+local transposer_getAllStacks, transposer_transferItem, transposer_getStackInSlot, transposer_getInventorySize, redstone_getInput, redstone_setOutput = transposer.getAllStacks, transposer.transferItem, transposer.getStackInSlot, transposer.getInventorySize, redstone.getInput, redstone.setOutput
 
 local isCoolant = {[3]=0.7,[6]=0.4,[9]=0.4,[10]=0.6,[15]=0.6,[22]=0.9,[26]=1,[29]=1,[33]=0.9,[40]=0.6,[45]=0.6,[46]=0.4,[49]=0.4,[52]=0.7}--索引为冷却单元槽位，值为该槽位吸收的热量与第26槽吸收热量的比值
 
@@ -53,13 +53,12 @@ function initialize()
             end
             return emptySlotCount == info.count()--是否可以作为输出容器
         end
-        local name = transposer.getInventoryName(i)
-        typeInventory[i] = name
+        local name = transposer_getInventorySize(i) ~= 0 and transposer.getInventoryName(i)--物品栏大小一定要大于0这一块，点名AE2的能源接收器和GT线缆
         if name == "blockReactorChamber" then
-            if transposer.getInventorySize(i) < 54 then
+            if transposer_getInventorySize(i) < 54 then
                 error("需要六个核反应仓")
             end
-            sideReactorChamber, typeInventory[i] = i, 1
+            sideReactorChamber = i
         elseif name == "tile.appliedenergistics2.BlockInterface" or name == "tile.fluid_interface" then
             if isMEInterfaceMode then
                 error("转运器附近存在多个ME接口")
@@ -90,11 +89,7 @@ function initialize()
     if sideReactorChamber < 2 then--如果为反应堆方向(转运器)为上下，直接记录为红石输出方向，否则将可能的输出方向添加到possibleSideRedstone中以待后续检测
         sideRedstone = sideReactorChamber
     else
-        for i=2,5 do
-            if redstone.getComparatorInput(i) < 1 then--反应堆无法被红石比较器读取
-                possibleSideRedstone[#possibleSideRedstone+1] = i--添加到列表，待收到开机信号后再逐个验证
-            end
-        end
+        possibleSideRedstone = { 2,3,4,5 }--待收到开机信号后再逐个验证
     end
     computer.pushSignal("redstone_changed")--手动触发红石更新
     sleep(0.1)
@@ -188,8 +183,11 @@ function check(active)
     if slotReplaced[1] then
         info = transposer_getAllStacks(sideReactorChamber).getAll()
         for i=1,54 do
-            if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - isCoolant[i] * minCoolantCellDurability) or not isCoolant[i] and info[i-1].name ~= fuelRod then
+            if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - math.floor((isCoolant[i] * minCoolantCellDurability) / 2)) or not isCoolant[i] and info[i-1].name ~= fuelRod then
                 error((isCoolant[i] and "冷却单元" or "燃料棒").."更换失败")
+                --maxDamage计算公式有所不同，避免意外进入此分支
+                --最初检测到低耐久冷却单元并关闭红石输出后，核电仍会进行一次结算，若此次结算导致新的冷却单元进入低耐久状态，则会意外进入此分支
+                --此分支的目的是防止ME断电后，低耐久冷却单元从ME接口反复进出引起冷却单元熔毁（反复进出是因为，只要能从预期位置转运物品就不会调用API获取物品信息，以节约性能）
             end
         end
     end
