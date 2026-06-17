@@ -173,6 +173,7 @@ function check(active)
             transposer_transferItem(sideReactorChamber, sideOutput, 1, slotReplaced[i])
         end
         if transposer_transferItem(side, sideReactorChamber, 1, slot, slotReplaced[i]) == 0 then
+            sleep(0.05)--ME接口只有一个冷却单元时，有概率更新速度不够
             search(isCoolant[slotReplaced[i]])
             side, slot = getItemSlot(isCoolant[slotReplaced[i]])
             if transposer_transferItem(side, sideReactorChamber, 1, slot, slotReplaced[i]) == 0 then
@@ -183,7 +184,7 @@ function check(active)
     if slotReplaced[1] then
         info = transposer_getAllStacks(sideReactorChamber).getAll()
         for i=1,54 do
-            if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - math.floor((isCoolant[i] * minCoolantCellDurability) / 2)) or not isCoolant[i] and info[i-1].name ~= fuelRod then
+            if isCoolant[i] and (info[i-1].name ~= coolantCell or info[i-1].damage > 98 - math.floor((isCoolant[i] * minCoolantCellDurability) / 2)) then
                 error((isCoolant[i] and "冷却单元" or "燃料棒").."更换失败")
                 --maxDamage计算公式有所不同，避免意外进入此分支
                 --最初检测到低耐久冷却单元并关闭红石输出后，核电仍会进行一次结算，若此次结算导致新的冷却单元进入低耐久状态，则会意外进入此分支
