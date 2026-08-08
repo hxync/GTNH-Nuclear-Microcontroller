@@ -1,80 +1,92 @@
-# 强冷核电OC自动化
+# OC Automation for Actively Cooled Nuclear Reactors
 
-此方案硬编码了燃料棒、冷却单元、核电布局(六个反应仓)，识别燃料棒与冷却单元依赖于2.8.0以后的物品ID
+This solution operates reliably in low-TPS environments and allows restarting the game server while it is running.
 
-**支持的燃料棒**：4联钍、4联铀、4联浓缩铀、4联MOX，4联浓缩钚、4联超能硅岩、“核心”、4联泰伯利亚、4联激发铀、4联激发钚
+There are no placement restrictions; the containers mentioned simply need to be adjacent to the microcontroller.
 
-**支持的冷却单元**：3种氦冷、3种钠钾、4种空间、中子热容
+**Supported fuel rods**: Quad Thorium, Quad Uranium, Quad High-Density Uranium, Quad MOX, Quad High-Density Plutonium, Quad Naquadria, "Core", Quad Tiberium, Quad Excited Uranium, Quad Excited Plutonium
 
-## 配置
+- Supports hybrid rods: "Core" + Excited Uranium, "Core" + Excited Plutonium
 
-- 将`nuclear.lua`内的代码保存到OC电脑的文件中。
+**Supported coolant cells**: 3 types of helium coolant cells, 3 types of NaK coolant cells, 4 types of space coolant cells, Neutronium Heat Capacitor
 
-- 给OC电脑换上空的EEPROM，执行`flash <文件名>`，按照指引将代码刷写到EEPROM中。
+**Limitations**:
 
-- 在电子装配器中使用\{T1微控制器外壳、T1CPU，T1内存、T1红石卡、转运器、刷写过的EEPROM\}构建微控制器。
+- Only supports six-chamber actively-cooled configurations (missing a reactor chamber will cause an error)
 
-备注：EEPROM的存储空间为4KB，源码文件(`nuclear_SourceCode.lua`)过大，务必使用通过重命名变量等方法压缩过的代码(`nuclear.lua`)。
+- Only one type of fuel rod and one type of coolant cell (or the hybrid rods above) may be used; otherwise an error occurs
 
-## 使用
+- Coolant cell durability consumption per second must not exceed 10% (a mismatch between heat generation and heat capacity will cause an error)
 
-- 微控制器需要供能（可以通过ME接口供能）
+- When using MOX fuel rods, manual preheating is required
 
-- 若检测到非预期的情况，微控制器内的程序会中断，正面指示灯会闪烁红光，使用分析器shift右击微控制器即可查看程序中止原因
+## Setup
 
-- 程序运行期间不会自动启动核电，需要给予微控制器红石信号才会启动
+- Save the code from `nuclear.lua` to a file on your OC computer.
 
-- 微控制器需要紧贴核反应仓放置，支持以下两套使用方法
+- Insert a blank EEPROM into the computer, run `flash <filename>`, and follow the instructions to flash the code onto the EEPROM.
 
-**1.普通容器模式**
+- In an Electronics Assembler, place the following in order: T1 Microcontroller Case, Transposer, T1 Redstone Card, T1 CPU, T1 RAM, and the flashed EEPROM; then click "Assemble".
 
-- 启动期间搜寻附近容器，若无ME接口自动进入此模式，搜寻只会在启动时执行一次
-
-- 会将包含燃料棒或耐久在30以上的冷却单元的方向标记为输入方向（可以有多个）
-
-- 会将不包含燃料棒与耐久在30以上的冷却单元的一个容器方向标记为输出方向
-
-**2.ME模式**
-
-- 启动期间搜寻附近容器，若存在ME接口或ME二合一接口自动进入此模式，搜寻只会在启动时执行一次
-
-- 燃料棒与冷却单元的输入输出均通过ME接口进行
-
-# Strong Cooling Nuclear Reactor OC Automation
-This solution hardcodes the fuel rods, coolant cells, and nuclear reactor layout (six reactor chambers). Identification of fuel rods and coolant cells relies on item IDs from version 2.8.0 onwards.
-
-**Supported fuel rods**: Quad Thorium, Quad Uranium, Quad Enriched Uranium, Quad MOX, Quad Enriched Plutonium, Quad Naquadria, 32‑fold Naquadah, Quad Tiberium, Quad Excited Uranium, Quad Excited Plutonium
-
-**Supported coolant cells**: 3 types of Helium, 3 types of NaK, 4 types of Space, and the Neutronium Heat Capacitor
-
-## Configuration
-- Save the code from `nuclear.lua` into a file on the OC computer.
-
-- Insert a blank EEPROM into the OC computer and execute `flash <filename>`. Follow the instructions to flash the code onto the EEPROM.
-
-- In the Assembler, construct a microcontroller using the following components: \{T1 Microcontroller Case, T1 CPU, T1 RAM, T1 Redstone Card, Transposer, the flashed EEPROM\}.
-
-Note: The EEPROM has a storage capacity of 4 KB. The source file (`nuclear_SourceCode.lua`) is too large; be sure to use the compressed code (`nuclear.lua`) obtained by renaming variables and similar methods.
+Note: The EEPROM has only 4 KB of storage. The source file (`nuclear_SourceCode.lua`) is too large; you must use the compressed code (`nuclear.lua`) that employs variable renaming and other minifications.
 
 ## Usage
-- The microcontroller requires power (it can be powered through an ME Interface).
 
-- If an unexpected situation is detected, the program inside the microcontroller will terminate, and the front indicator light will flash red. Use an Analyzer and shift‑right‑click the microcontroller to view the reason for the termination.
+- The microcontroller requires power (it can be powered via an ME Interface).
 
-- During program operation, the nuclear reactor will not start automatically. It will only start when a redstone signal is given to the microcontroller.
+- If an unexpected condition is detected, the program will throw an error and exit, and the front indicator light will flash red.
 
-- The microcontroller must be placed directly adjacent to the reactor chamber. Two sets of usage methods are supported:
+- The program will not start the nuclear reactor on its own; a redstone signal of strength **2 or greater** must be supplied to the microcontroller to start the reactor.
 
-**1. Normal Container Mode**
+- The redstone control signal must not be passed directly to the reactor; turning the reactor on and off should be left to the microcontroller.
 
-- During startup, nearby containers are scanned. If no ME Interface is found, this mode is automatically entered. The scan is performed only once at startup.
+- A single microcontroller can control multiple reactors, but **do not** let the microcontroller touch two faces of the same reactor.
 
-- Directions containing fuel rods or coolant cells with durability above 30 are marked as input directions (multiple such directions are allowed).
+- The microcontroller must be placed adjacent to a reactor chamber. It supports the following two operating modes.
+
+**1. Regular Container Mode**
+
+- During startup, the microcontroller scans nearby containers. If no ME Interface is found, it automatically enters this mode. Scanning is performed only once at startup.
+
+- Directions containing fuel rods or coolant cells with durability **above 30** are marked as input directions (there can be multiple).
 
 - One container direction that contains neither fuel rods nor coolant cells with durability above 30 is marked as the output direction.
 
 **2. ME Mode**
 
-- During startup, nearby containers are scanned. If an ME Interface or an ME Dual‑Interface is found, this mode is automatically entered. The scan is performed only once at startup.
+- During startup, the microcontroller scans nearby containers. If an ME Interface or ME Dual Interface is found, it automatically enters this mode. Scanning is performed only once at startup.
 
-- Both input and output of fuel rods and coolant cells are handled through the ME Interface.
+- Both input and output of fuel rods and coolant cells are handled through this ME Interface.
+
+
+# Code Compression Process
+
+## 1. Preprocessing
+
+Apply the following find-and-replace operations to the source code:
+
+- side --> a
+
+- .wakeTime --> .b
+
+- .task --> .c
+
+- check --> d
+
+- replace --> e
+
+- .sleep --> .f
+
+- :sleep --> :f
+
+## 2. luamin
+
+Use `luamin` to minify the code, renaming all local variables to single or double letters.
+
+## 3. Post-processing
+
+Replace `function`, `local`, and `end` in the luamin output with `$`, `&`, and `@` respectively, then embed the resulting text into the following skeleton code:
+
+~~~lua
+local t='the replaced text'; t=t:gsub("%$","function"); t=t:gsub("&","local"); t=t:gsub("@","end"); load(t)()
+~~~
