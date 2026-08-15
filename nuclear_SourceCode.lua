@@ -158,7 +158,7 @@ function Reactor:replace(needReplace, hasItem, retry)
         if isCoolant[_1[1]] then
             -- 最初检测到低耐久冷却单元到关闭红石输出之后，核电有低概率会进行两次结算，若此结算导致新的冷却单元进入低耐久状态，则会意外进入此分支，故而允许重试
             -- 此分支的目的是防止ME断电后，低耐久冷却单元从ME接口反复进出引起冷却单元熔毁（反复进出是因为，只要能从预期位置转运物品就不会调用API获取物品信息，以节约性能）
-            return retry and er() or self:replace(_1, _2, 1)
+            return retry > 3 and er() or self:replace(_1, _2, retry + 1) -- 一开始是仅允许重试1次，但是一直有人莫名其妙报错停机，干脆改成了3次（所以到底是为什么呢？）
         end
     end
     redstone_setOutput(self.side, isActive and 1 or 0)
@@ -248,7 +248,7 @@ local function main()
         reactor.task = c3.wrap(function()
             while 1 do
                 local _1, _2, _3 = reactor:check()
-                reactor:replace(_1, _2)
+                reactor:replace(_1, _2, 0)
                 reactor:sleep(_3)
             end
         end)
