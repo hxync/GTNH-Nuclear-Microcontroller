@@ -155,6 +155,8 @@ local function cycle(side)
             while computer_uptime() < wakeTime[side] do
                 coroutine_yield()
             end
+        else
+            update()
         end
         -- 更换燃料棒与冷却单元
         for _, slot in ipairs(needReplace) do
