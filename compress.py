@@ -14,15 +14,16 @@ def step1_preprocess():
         content = f.read()
     
     # 替换规则（顺序敏感，逐个替换）
-    replacements = [
-        ("side", "a"),
-        (".wakeTime", ".b"),
-        (".task", ".c"),
-        ("check", "d"),
-        ("replace", "e"),
-        (".sleep", ".f"),
-        (":sleep", ":f"),
-    ]
+    replacements = []
+        #("side", "a"),
+        #(".wakeTime", ".b"),
+        #(".task", ".c"),
+        #("check", "d"),
+        #("replace", "e"),
+        #(".sleep", ".f"),
+        #(":sleep", ":f"),
+        #(".ready", ".g")
+    #]
     
     for old, new in replacements:
         content = content.replace(old, new)
@@ -49,14 +50,14 @@ def step3_postprocess():
     # 删除末尾的换行符
     obfuscated = obfuscated.rstrip('\n')
     
-    # 将 function、local、end 替换为 $、&、@
-    replaced = obfuscated.replace("function", "$").replace("local", "&").replace("end", "@")
+    # 将 function、return、then、local、end 替换为 &@、@&、$、&、@
+    replaced = obfuscated.replace("function", "&@").replace("return", "@&").replace("then ", "$").replace("local ", "&").replace("end", "@")
     
     # 转义替换后文本中的单引号和反斜杠，使其能安全嵌入到单引号字符串中
     safe_replaced = replaced.replace("\\", "\\\\").replace("'", "\\'")
     
     # 按模板生成最终代码
-    final_code = f"local t='{safe_replaced}';t=t:gsub(\"%$\",\"function\");t=t:gsub(\"&\",\"local\");t=t:gsub(\"@\",\"end\");load(t)()"
+    final_code = f"local t='{safe_replaced}';load(t:gsub(\"&@\",\"function\"):gsub(\"@&\",\"return\"):gsub(\"%$\",\"then \"):gsub(\"&\",\"local \"):gsub(\"@\",\"end\"))()"
     
     with open(final_file, 'w', encoding='utf-8') as f:
         f.write(final_code)

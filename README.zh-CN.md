@@ -22,13 +22,13 @@
 
 ## 配置
 
-- 将nuclear.lua内的代码保存到OC电脑的文件中。
+- 将`nuclear.lua`内的代码保存到OC电脑的文件中。
 
 - 给OC电脑换上空的EEPROM，执行`flash <文件名>`，按照指引将代码烧录到EEPROM中。
 
 - 在电子装配器中按顺序放入：T1微控制器外壳、转运器、T1红石卡、T1中央处理器(CPU)、T1内存、以及烧录过的EEPROM，然后点击组装。
 
-备注：EEPROM的存储空间为4KB，源码文件(nuclear_SourceCode.lua)过大，务必使用通过重命名变量等方法压缩过的代码(nuclear.lua)。
+备注：EEPROM的存储空间为4KB，源码文件(`nuclear_SourceCode.lua`)过大，务必使用通过重命名变量等方法压缩过的代码(`nuclear.lua`)。
 
 ## 使用
 
@@ -61,32 +61,14 @@
 
 # 代码压缩过程
 
-## 1.预处理
-
-对源码执行如下查找替换
-
-- side --> a
-
-- .wakeTime --> .b
-
-- .task --> .c
-
-- check --> d
-
-- replace --> e
-
-- .sleep --> .f
-
-- :sleep --> :f
-
-## 2.luamin
+## 1.luamin
 
 使用 luamin 进行混淆，将所有局部变量重命名为单字母与双字母。
 
-## 3.后续处理
+## 2.后续处理
 
-将 luamin 混淆过的代码中的function、local、end分别替换为$、&、@，将替换后的文本填充进如下代码
+将 luamin 混淆过的代码中的`function`、`return`、`then `、`local `、`end`分别替换为`&@`、`@&`、`$`、`&`、`@`，将替换后的文本填充进如下代码
 
 ~~~lua
-local t='替换过的文本';t=t:gsub("%$","function");t=t:gsub("&","local");t=t:gsub("@","end");load(t)()
+local t='替换过的文本';load(t:gsub("&@","function"):gsub("@&","return"):gsub("%$","then "):gsub("&","local "):gsub("@","end"))()
 ~~~

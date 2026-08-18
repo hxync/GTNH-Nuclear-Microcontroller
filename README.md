@@ -61,32 +61,14 @@ Note: The EEPROM has only 4 KB of storage. The source file (`nuclear_SourceCode.
 
 # Code Compression Process
 
-## 1. Preprocessing
+## 1. luamin
 
-Apply the following find-and-replace operations to the source code:
+Use luamin to minify the code, renaming all local variables to single or double letters.
 
-- side --> a
+## 2. Post-processing
 
-- .wakeTime --> .b
-
-- .task --> .c
-
-- check --> d
-
-- replace --> e
-
-- .sleep --> .f
-
-- :sleep --> :f
-
-## 2. luamin
-
-Use `luamin` to minify the code, renaming all local variables to single or double letters.
-
-## 3. Post-processing
-
-Replace `function`, `local`, and `end` in the luamin output with `$`, `&`, and `@` respectively, then embed the resulting text into the following skeleton code:
+Replace `function`, `return`, `then `, `local `, and `end` in the luamin output with `&@`, `@&`, `$`, `&`, and `@` respectively, then embed the resulting text into the following skeleton code:
 
 ~~~lua
-local t='the replaced text'; t=t:gsub("%$","function"); t=t:gsub("&","local"); t=t:gsub("@","end"); load(t)()
+local t='the replaced text';load(t:gsub("&@","function"):gsub("@&","return"):gsub("%$","then "):gsub("&","local "):gsub("@","end"))()
 ~~~
