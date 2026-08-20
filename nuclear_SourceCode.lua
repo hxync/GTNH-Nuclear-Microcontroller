@@ -15,12 +15,6 @@ local fuelRodSlot, mixedFuelRodSlot, coolantCellSlot = {}, {}, {} -- 燃料棒�
 local fuelRodSlot, mixedFuelRodSlot, coolantCellSlot, reactors, wakeTime, fuelRod, mixedFuelRod, coolantCell, isActive, isMEInterfaceMode, sideOutput = {}, {}, {}, {}, {}
 
 
--- 重启
-local function reboot()
-    redstone.setOutput({0,0,0,0,0,[0]=0})
-    c2.shutdown(1)
-end
-
 local redstoneMap, initializingMap = {1,[0]=0} -- 将转运器使用的绝对方向(东南西北)映射为红石卡使用的相对方向(前后左右)
 local redstone_getOutput = {0,0,0,0,0,[0]=0} -- 已设置的红石输出值
 local function initializeRedstoneMap(side) -- 首次开机时调用一次，用于完成redstoneMap的初始化
@@ -78,21 +72,31 @@ end
 
 -- 更新燃料棒与冷却单元来源容器的快照
 local function update()
+    isMEInterfaceMode = isMEInterfaceMode and 0 or nil
     for side,_ in pairs(fuelRodSlot) do
         fuelRodSlot[side], coolantCellSlot[side], mixedFuelRodSlot[side] = {}, {}, {}
         local slot = 0
-        for stack in transposer_getAllStacks(side) do
+        for stack in transposer.getAllStacks(side) do -- 避免在此处让出协程引发竞态
             slot = slot + 1
-            if stack.name == fuelRod then
-                fuelRodSlot[side][slot] = stack.size
-            elseif stack.name == coolantCell and stack.damage < 70 then
+            local name, size = stack.name, stack.size
+            if name == fuelRod then
+                fuelRodSlot[side][slot] = size
+            elseif name == coolantCell and stack.damage < 70 then
                 coolantCellSlot[side][slot] = 1
-            elseif mixedFuelRod and stack.name == mixedFuelRod then
-                mixedFuelRodSlot[side][slot] = stack.size
+            elseif mixedFuelRod and name == mixedFuelRod then
+                mixedFuelRodSlot[side][slot] = size
+            end
+            if isMEInterfaceMode and not name then
+                isMEInterfaceMode = slot -- 记录ME接口的空槽位
             end
         end
     end
+    if isMEInterfaceMode == 0 then
+        er("ME接口已满")
+    end
 end
+
+local FUELROD, COOLANTCELL, LACK = "燃料棒", "冷却单元", "缺少"
 
 -- 获取一个可用燃料棒与冷却单元的方向和槽位
 local function getItem(slot, retry)
@@ -113,7 +117,7 @@ local function getItem(slot, retry)
         end
     end
     update() -- 仅当快照中不存在所需物品时才调用组件API进行更新
-    return retry and reboot() or getItem(slot, 1)
+    return retry and er(LACK..(isCoolant[slot] and COOLANTCELL or FUELROD)) or getItem(slot, 1)
 end
 
 
@@ -133,13 +137,13 @@ local function cycle(side)
                 if damage > 98 - 4 * isCoolant[i] then
                     extra[#extra+1] = i
                 end
-                sleepTime = math.min(sleepTime, (98 - stack.damage) / isCoolant[i] - 3)
+                sleepTime = math.min(sleepTime, (98 - damage) / isCoolant[i] - 3)
             end
         elseif mixedFuelRod and i % 2 == 0 then
-            if stack.name ~= mixedFuelRod then
+            if name ~= mixedFuelRod then
                 needReplace[#needReplace+1] = i
             end
-        elseif stack.name ~= fuelRod then
+        elseif name ~= fuelRod then
             needReplace[#needReplace+1] = i
         end
     end
@@ -160,15 +164,18 @@ local function cycle(side)
         end
         -- 更换燃料棒与冷却单元
         for _, slot in ipairs(needReplace) do
+            ::RETRY::
             local _side, _slot = getItem(slot)
-            if hasItem[slot] then -- hasItem参数的作用是在这里节省一次可能的组件API调用
-                transposer_transferItem(side, sideOutput, 1, slot)
-            end
-            if transposer_transferItem(_side, side, 1, _slot, slot) == 0 then
-                update() -- 如果失败了，更新快照并重试
-                if transposer_transferItem(_side, side, 1, _slot, slot) == 0 then
-                    reboot() -- 再次失败直接重启
+            if hasItem[slot] then -- hasItem的作用是在这里节省一次可能的组件API调用
+                if transposer_transferItem(side, sideOutput, 1, slot, isMEInterfaceMode) < 1 then
+                    update()
+                    goto RETRY
                 end
+                hasItem[slot] = nil
+            end
+            if transposer_transferItem(_side, side, 1, _slot, slot) < 1 then
+                update()
+                goto RETRY
             end
         end
     else -- 若发生了更换，等待下次循环进行二次检查再开机
@@ -185,7 +192,6 @@ end
 
 -- 初始化
 local prefix, suffix = "gregtech:gt.", "_Coolantcell" -- 物品id前后缀（用于压缩代码）
-local FUELROD, COOLANTCELL, LACK = "燃料棒", "冷却单元", "缺少"
 local fuelRodList = { [prefix.."rodThorium4"]=4, [prefix.."rodUranium4"]=13, [prefix.."rodHighDensityUranium4"]=13,
                         [prefix.."rodMOX4"]=13, [prefix.."rodHighDensityPlutonium4"]=13, [prefix.."rodNaquadria4"]=13,
                         [prefix.."rodNaquadah32"]=1050, [prefix.."rodTiberium4"]=13, [prefix.."rodExcitedUranium4"]=200,
@@ -233,7 +239,7 @@ for i=0,5 do
         if isMEInterfaceMode then
             er("存在多个ME接口")
         end
-        isMEInterfaceMode, fuelRodSlot, fuelRod, coolantCell = true, {} -- 重置其它容器的信息
+        isMEInterfaceMode, fuelRodSlot, fuelRod, coolantCell = 0, {} -- 重置其它容器的信息
         checkContainer()
         sideOutput = i
     elseif name and not isMEInterfaceMode and checkContainer() then -- 输出容器分支
