@@ -25,7 +25,7 @@ local function initializeRedstoneMap(side) -- 首次开机时调用一次，用�
         until redstoneMap[side]
         return
     end
-    initializingMap = {[side]=1} -- 标记正在初始化，防止其它协程二次调用
+    initializingMap = {[side]=1} -- 标记正在初始化，防止阻断其它协程的二次调用
     ::WAIT::
     for i = 5,2,-1 do
         if reactors[i] and not initializingMap[i] then
@@ -63,7 +63,8 @@ local function redstone_setOutput(side, value)
             return raw_redstone_setOutput(redstoneMap[side], value)
         else
             initializeRedstoneMap(side)
-            isActive = nil -- 重新检查再开机
+            -- return redstone_setOutput(side, value) -- 有概率导致升温
+            isActive = nil -- 引发一次红石更新以立即进行一次检查再开机
             computer_pushSignal(redstone_changed)
         end
     end
@@ -116,7 +117,7 @@ local function getItem(slot, retry)
             end
         end
     end
-    update() -- 仅当快照中不存在所需物品时才调用组件API进行更新
+    update() -- 仅当快照中不存在所需物品时才调用组件 API 进行更新
     return retry and er(LACK..(isCoolant[slot] and COOLANTCELL or FUELROD)) or getItem(slot, 1)
 end
 
@@ -153,21 +154,21 @@ local function cycle(side)
         for _, slot in ipairs(extra) do
             needReplace[#needReplace+1] = slot
         end
-        -- 停机并等待1.5秒
+        -- 停机并等待1秒
         if redstone_setOutput(side, 0) then
-            wakeTime[side] = computer_uptime() + 1.5
+            wakeTime[side] = computer_uptime() + 1 -- computer.uptime 的计算基于游戏tick，不必担忧tps引发的同步问题
             while computer_uptime() < wakeTime[side] do
                 coroutine_yield()
             end
         else
-            update()
+            update() -- 更换过但是检查不通过，需要重新检查
         end
         -- 更换燃料棒与冷却单元
         for _, slot in ipairs(needReplace) do
             ::RETRY::
             local _side, _slot = getItem(slot)
-            if hasItem[slot] then -- hasItem的作用是在这里节省一次可能的组件API调用
-                if transposer_transferItem(side, sideOutput, 1, slot, isMEInterfaceMode) < 1 then
+            if hasItem[slot] then -- hasItem 的作用是在这里节省一次可能的组件API调用
+                if transposer_transferItem(table.unpack({side, sideOutput, 1, slot, isMEInterfaceMode})) < 1 then -- 第五个参数显式传入 nil 会引发报错
                     update()
                     goto RETRY
                 end
@@ -175,10 +176,10 @@ local function cycle(side)
             end
             if transposer_transferItem(_side, side, 1, _slot, slot) < 1 then
                 update()
-                goto RETRY
+                goto RETRY -- goto 相比 break 而言，组件 API 调用次数更少
             end
         end
-    else -- 若发生了更换，等待下次循环进行二次检查再开机
+    else -- 若发生了更换，等待下次循环进行二次检查后再开机
         wakeTime[side] = computer_uptime() + math.max(sleepTime, 0.3)
         redstone_setOutput(side, isActive and 1 or 0)
         while computer_uptime() < wakeTime[side] do
@@ -261,8 +262,8 @@ end
 if mixedFuelRod then -- 混合布局的第26槽发热量与“核心”一致，比率有所不同
     isCoolant = {[3]=0.2,[6]=0.5,[9]=0.1,[10]=0.7,[15]=0.2,[22]=0.9,[26]=1,[29]=0.2,[33]=0.2,[40]=0.7,[45]=0.2,[46]=0.5,[49]=0.1,[52]=0.8}
 end
-for slot, heat in pairs(isCoolant) do
-    isCoolant[slot] = (fuelRodList[fuelRod] / coolantCellList[coolantCell]) * heat -- 覆写为每秒消耗的耐久值
+for slot, heat in pairs(isCoolant) do -- 覆写为每秒消耗的耐久值
+    isCoolant[slot] = (fuelRodList[fuelRod] / coolantCellList[coolantCell]) * heat
 end
 if isCoolant[26] > 10 then
     er(COOLANTCELL.."热容过小")
