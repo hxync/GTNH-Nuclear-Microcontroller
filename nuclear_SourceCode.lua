@@ -7,12 +7,12 @@ local transposer_getAllStacks, transposer_transferItem, transposer_getStackInSlo
 local isCoolant = {[3]=0.8,[6]=0.5,[9]=0.5,[10]=0.7,[15]=0.7,[22]=0.9,[26]=1,[29]=1,[33]=0.9,[40]=0.7,[45]=0.7,[46]=0.5,[49]=0.5,[52]=0.8}
 
 --[[
-local reactors, wakeTime = {}, {} -- 反应堆实例，唤醒时间，索引为转运器方向
+local reactors = {} -- 反应堆实例，索引为转运器方向
 local isActive, isMEInterfaceMode, sideOutput -- 是否处于工作状态，是否使用ME接口进行物流，输出容器的方向
 local fuelRod, mixedFuelRod, coolantCell -- 燃料棒ID，混合棒额外燃料棒的ID，冷却单元ID
 local fuelRodSlot, mixedFuelRodSlot, coolantCellSlot = {}, {}, {} -- 燃料棒、冷却单元快照，索引为容器方向，子表索引为槽位，子表值为数量
 ]]
-local fuelRodSlot, mixedFuelRodSlot, coolantCellSlot, reactors, wakeTime, fuelRod, mixedFuelRod, coolantCell, isActive, isMEInterfaceMode, sideOutput = {}, {}, {}, {}, {}
+local fuelRodSlot, mixedFuelRodSlot, coolantCellSlot, reactors, fuelRod, mixedFuelRod, coolantCell, isActive, isMEInterfaceMode, sideOutput = {}, {}, {}, {}
 
 
 local redstoneMap, initializingMap = {1,[0]=0} -- 将转运器使用的绝对方向(东南西北)映射为红石卡使用的相对方向(前后左右)
@@ -156,8 +156,8 @@ local function cycle(side)
         end
         -- 停机并等待1秒
         if redstone_setOutput(side, 0) then
-            wakeTime[side] = computer_uptime() + 1 -- computer.uptime 的计算基于游戏tick，不必担忧tps引发的同步问题
-            while computer_uptime() < wakeTime[side] do
+            local wakeTime = computer_uptime() + 1 -- computer.uptime 的计算基于游戏tick，不必担忧tps引发的同步问题
+            while computer_uptime() < wakeTime do
                 coroutine_yield()
             end
         else
@@ -180,9 +180,9 @@ local function cycle(side)
             end
         end
     else -- 若发生了更换，等待下次循环进行二次检查后再开机
-        wakeTime[side] = computer_uptime() + math.max(sleepTime, 0.3)
+        local wakeTime = computer_uptime() + math.max(sleepTime, 0.3)
         redstone_setOutput(side, isActive and 1 or 0)
-        while computer_uptime() < wakeTime[side] do
+        while computer_uptime() < wakeTime do
             if coroutine_yield() then
                 break
             end
@@ -296,11 +296,8 @@ computer_pushSignal(redstone_changed)
 
 -- 主循环
 while 1 do
-    local wkt, wk = 0
-    for _, wt in pairs(wakeTime) do
-        wkt = math.min(wkt, wt)
-    end
-    local signal = computer_pullSignal(math.max(0, wkt - computer_uptime()))
+    local wake
+    local signal = computer_pullSignal(0.05)
     if signal == redstone_changed then
         local maxInput, redstoneInput = 0, redstone.getInput()
         for i=0,5 do
@@ -308,7 +305,7 @@ while 1 do
                 maxInput = redstoneInput[i]
             end
         end
-        wk = maxInput > 1 ~= isActive
+        wake = maxInput > 1 ~= isActive
         isActive = maxInput > 1
         if maxInput < 2 then
             redstone_getOutput = {0,0,0,0,0,[0]=0}
@@ -316,6 +313,6 @@ while 1 do
         end
     end
     for _, reactor in pairs(reactors) do
-        reactor(wk)
+        reactor(wake)
     end
 end
