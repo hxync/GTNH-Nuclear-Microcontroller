@@ -36,7 +36,7 @@ Note: The EEPROM has only 4 KB of storage. The source file (`nuclear_SourceCode.
 
 - If an unexpected condition is detected, the program will throw an error and exit, and the front indicator light will flash red.
 
-- The program will not start the nuclear reactor on its own; a redstone signal of strength **2 or greater** must be supplied to the microcontroller to start the reactor.
+- The program will not start the nuclear reactor on its own; applying a redstone signal of any strength to the microcontroller will start it.
 
 - The redstone control signal must not be passed directly to the reactor; turning the reactor on and off should be left to the microcontroller.
 

@@ -25,7 +25,7 @@ local function initializeRedstoneMap(side) -- 首次开机时调用一次，用�
         until redstoneMap[side]
         return
     end
-    initializingMap = {[side]=1} -- 标记正在初始化，防止阻断其它协程的二次调用
+    initializingMap = {[side]=1} -- 标记正在初始化，阻断其它协程的二次调用
     ::WAIT::
     for i = 5,2,-1 do
         if reactors[i] and not initializingMap[i] then
@@ -39,7 +39,7 @@ local function initializeRedstoneMap(side) -- 首次开机时调用一次，用�
             tags[i] = transposer_getStackInSlot(i, 1).tag
         end
     end
-    for i = 5,2,-1 do
+    for i = 5,2,-1 do -- 优先探测左侧与右侧
         raw_redstone_setOutput(i, 1)
         local wt = computer_uptime() + 1
         while computer_uptime() < wt do
@@ -118,7 +118,10 @@ local function getItem(slot, retry)
         end
     end
     update() -- 仅当快照中不存在所需物品时才调用组件 API 进行更新
-    return retry and er(LACK..(isCoolant[slot] and COOLANTCELL or FUELROD)) or getItem(slot, 1)
+    if retry then
+        er(LACK..(isCoolant[slot] and COOLANTCELL or FUELROD))
+    end
+    return getItem(slot, 1)
 end
 
 
@@ -299,15 +302,18 @@ while 1 do
     local wake
     local signal = computer_pullSignal(0.05)
     if signal == redstone_changed then
-        local maxInput, redstoneInput = 0, redstone.getInput()
+        local redstoneInput = redstone.getInput()
         for i=0,5 do
-            if redstoneInput[i] > maxInput then
-                maxInput = redstoneInput[i]
+            if redstoneInput[redstoneMap[i]] > redstone_getOutput[i] then
+                wake = not isActive
+                isActive = 1
+                goto BREAK
             end
         end
-        wake = maxInput > 1 ~= isActive
-        isActive = maxInput > 1
-        if maxInput < 2 then
+        wake = isActive
+        isActive = nil
+        ::BREAK::
+        if not isActive then
             redstone_getOutput = {0,0,0,0,0,[0]=0}
             redstone.setOutput(redstone_getOutput)
         end
