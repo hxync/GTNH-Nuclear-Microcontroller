@@ -304,7 +304,7 @@ while 1 do
     if signal == redstone_changed then
         local redstoneInput = redstone.getInput()
         for i=0,5 do
-            if redstoneInput[redstoneMap[i]] > redstone_getOutput[i] then
+            if redstoneInput[redstoneMap[i] or i] > redstone_getOutput[i] then
                 wake = not isActive
                 isActive = 1
                 goto BREAK
