@@ -304,7 +304,9 @@ while 1 do
     if signal == redstone_changed then
         local redstoneInput = redstone.getInput()
         for i=0,5 do
-            if redstoneInput[redstoneMap[i] or i] > redstone_getOutput[i] then
+            --if not reactors[i] and redstoneInput[redstoneMap[i] or i] > 0 then
+            -- getInput(side:number):number采用相对方向，但是其重载getInput():table采用绝对方向
+            if not reactors[i] and redstoneInput[i] > 0 then
                 wake = not isActive
                 isActive = 1
                 goto BREAK
@@ -312,11 +314,11 @@ while 1 do
         end
         wake = isActive
         isActive = nil
-        ::BREAK::
-        if not isActive then
+        if wake then
             redstone_getOutput = {0,0,0,0,0,[0]=0}
             redstone.setOutput(redstone_getOutput)
         end
+        ::BREAK::
     end
     for _, reactor in pairs(reactors) do
         reactor(wake)
