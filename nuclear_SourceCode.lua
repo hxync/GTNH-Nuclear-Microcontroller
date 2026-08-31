@@ -1,3 +1,4 @@
+-- 修改版
 ---@diagnostic disable: unbalanced-assignments, undefined-global
 local c1, c2, c3, er, redstone_changed = component, computer, coroutine, error, "redstone_changed" -- 使用局部变量代替，以便后续通过重命名变量来压缩代码
 local component_list, component_proxy, computer_uptime, computer_pullSignal, computer_pushSignal, coroutine_yield = c1.list, c1.proxy, c2.uptime, c2.pullSignal, c2.pushSignal, c3.yield
@@ -60,7 +61,9 @@ local function redstone_setOutput(side, value)
     if redstone_getOutput[side] ~= value then -- 减少组件API的调用，降低阻塞
         if redstoneMap[side] then
             redstone_getOutput[side] = value
-            return raw_redstone_setOutput(redstoneMap[side], value)
+            local result = raw_redstone_setOutput(redstoneMap[side], value)
+            coroutine_yield()
+            return result
         else
             initializeRedstoneMap(side)
             -- return redstone_setOutput(side, value) -- 有概率导致升温
@@ -119,7 +122,9 @@ local function getItem(slot, retry)
     end
     update() -- 仅当快照中不存在所需物品时才调用组件 API 进行更新
     if retry then
-        er(LACK..(isCoolant[slot] and COOLANTCELL or FUELROD))
+        -- er(LACK..(isCoolant[slot] and COOLANTCELL or FUELROD))
+        raw_redstone_setOutput({0,0,0,0,0,[0]=0})
+        c2.shutdown(1) -- 重启
     end
     return getItem(slot, 1)
 end
@@ -294,7 +299,6 @@ end
 transposer_getAllStacks = wrapFunc(transposer_getAllStacks)
 transposer_transferItem = wrapFunc(transposer_transferItem)
 transposer_getStackInSlot = wrapFunc(transposer_getStackInSlot)
-raw_redstone_setOutput = wrapFunc(raw_redstone_setOutput)
 computer_pushSignal(redstone_changed)
 
 -- 主循环
@@ -316,7 +320,7 @@ while 1 do
         isActive = nil
         if wake then
             redstone_getOutput = {0,0,0,0,0,[0]=0}
-            redstone.setOutput(redstone_getOutput)
+            raw_redstone_setOutput(redstone_getOutput)
         end
         ::BREAK::
     end
