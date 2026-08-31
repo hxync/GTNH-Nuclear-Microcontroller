@@ -1,4 +1,3 @@
--- 修改版
 ---@diagnostic disable: unbalanced-assignments, undefined-global
 local c1, c2, c3, er, redstone_changed = component, computer, coroutine, error, "redstone_changed" -- 使用局部变量代替，以便后续通过重命名变量来压缩代码
 local component_list, component_proxy, computer_uptime, computer_pullSignal, computer_pushSignal, coroutine_yield = c1.list, c1.proxy, c2.uptime, c2.pullSignal, c2.pushSignal, c3.yield
