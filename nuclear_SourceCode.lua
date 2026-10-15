@@ -4,6 +4,11 @@ local component_list, component_proxy, computer_uptime, computer_pullSignal, com
 local transposer, redstone = component_proxy(component_list("transposer")()), component_proxy(component_list("redstone")())
 local transposer_getAllStacks, transposer_transferItem, transposer_getStackInSlot, transposer_getInventorySize, raw_redstone_setOutput = transposer.getAllStacks, transposer.transferItem, transposer.getStackInSlot, transposer.getInventorySize, redstone.setOutput
 
+-- 通过 computer.shutdown(true) 来重启时不会立即 GC，OC 也不提供主动 GC 的接口，因此需要在此处等待自动 GC
+while c2.freeMemory() < 7e4 do
+    c2.beep(1e3, 1)
+end
+
 local isCoolant = {[3]=0.8,[6]=0.5,[9]=0.5,[10]=0.7,[15]=0.7,[22]=0.9,[26]=1,[29]=1,[33]=0.9,[40]=0.7,[45]=0.7,[46]=0.5,[49]=0.5,[52]=0.8}
 
 --[[
